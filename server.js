@@ -26,7 +26,7 @@ app.use(express.static(__dirname + "/bower_components"))
 
 app.get('/',
         function(req, res) {
-          res.render('home', { foo: 'foo' });
+          res.render('home', { foo: req.query.foo || "foo" });
         });
 
 // Start the server.
