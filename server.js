@@ -33,5 +33,6 @@ app.get('/',
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
     console.log("Listening on port %s...", g_port);
+    console.log("Ctrl+C to exit.")
   });
 
