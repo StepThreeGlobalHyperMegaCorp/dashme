@@ -1,5 +1,9 @@
 #!/bin/sh
 
+mkdir -p mongo_files
+echo \$ mongod
+pgrep mongod || (./mongo/bin/mongod --dbpath ./mongo_files --quiet -httpinterface --rest &)
+
 echo \$ npm install
 npm install
 
