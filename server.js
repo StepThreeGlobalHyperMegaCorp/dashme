@@ -45,9 +45,9 @@ app.get('/',
         function(req, res) {
           if(req.query.key) { // There is a key to store, let's store it
             // Submit to the DB
-            g_usersCollection.insert({
-              "key" : req.query.value
-            }, function (err, doc) {
+            var docToInsert = {};
+            docToInsert[req.query.key] = req.query.value;
+            g_usersCollection.insert(docToInsert, function (err, doc) {
               if (err) {
                 console.log(err);
                 // If it failed, return error
