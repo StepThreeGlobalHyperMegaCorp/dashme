@@ -1,5 +1,5 @@
 var express = require('express');
-var ECT = require('ect');
+var EJS = require('ejs');
 var mongodb = require('mongodb');
 var app = express();
 
@@ -28,15 +28,7 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
 // Routing and server config
 //---------------------------------------------------------------------------
 
-var ectRenderer = ECT( { watch : true,
-                         root  : __dirname + '/views',
-                         ext   : '.ect',
-                         open  : '{{',
-                         close : '}}'
-  });
-
-app.set('view engine', 'ect');
-app.engine('ect', ectRenderer.render);
+app.set('view engine', 'ejs');
 
 // Log every request.
 app.use(function(req, res, next) {
@@ -45,38 +37,38 @@ app.use(function(req, res, next) {
   });
 
 // These directories get used for static files.
-app.use(express.static(__dirname + "/public"))
-app.use(express.static(__dirname + "/gen"))
-app.use(express.static(__dirname + "/bower_components"))
+app.use(express.static(__dirname + "/public"));
+app.use(express.static(__dirname + "/gen"));
+app.use(express.static(__dirname + "/bower_components"));
 
 app.get('/',
-        function(req, res) { 
-		  if(req.query.key) { // There is a key to store, let's store it
-			// Submit to the DB
-			g_usersCollection.insert({
-				"key" : req.query.value
-			}, function (err, doc) {
-				if (err) {
-					console.log(err);
-					// If it failed, return error
-					res.send("There was a problem adding the information to the database.");
-				}
-			});
-		  }
-		
-		  // res.render('home', { foo: req.query.foo || "foo" });
-		  g_usersCollection.find({},{},function(e,docs){
-		        res.render('home', {
-					foo: req.query.foo || "foo",
-		            "keys" : docs
-		        });
-		    });
+        function(req, res) {
+          if(req.query.key) { // There is a key to store, let's store it
+            // Submit to the DB
+            g_usersCollection.insert({
+              "key" : req.query.value
+            }, function (err, doc) {
+              if (err) {
+                console.log(err);
+                // If it failed, return error
+                res.send("There was a problem adding the information to the database.");
+              }
+            });
+          }
+          // res.render('home', { foo: req.query.foo || "foo" });
+          g_usersCollection.find().toArray(function(e, docs) {
+            console.log("Query result is ", docs);
+            res.render('home',
+                       { foo  : (req.query.foo || "foo"),
+                         keys : docs
+                       });
+          });
         });
 
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
     console.log("Listening on port %s...", g_port);
-    console.log("Ctrl+C to exit.")
+    console.log("Ctrl+C to exit.");
   });
 

@@ -28,23 +28,25 @@
   <div class="container">
     <div class="jumbotron">
       <h1>DashMe</h1>
-      <p>Get funky twice a week for good health. (code = {{= @foo }})</p>
+      <p>Get funky twice a week for good health.</p>
     </div>
 
 	<div class="row">
 	  <div class="col-lg-6">
 	    <div class="input-group">
-		<form action="/"> 
-	      <input type="text" class="form-control" placeholder="Key" name='key'>
-		  <input type="text" class="form-control" placeholder="Value" name='value'>
-		  <span class="input-group-btn">
-	        <button class="btn btn-default" type="submit">Save!</button>
-	      </span>
-		</form>
+	      <form action="/">
+	        <input type="text" class="form-control" placeholder="Key" name='key'>
+		<input type="text" class="form-control" placeholder="Value" name='value'>
+		<span class="input-group-btn">
+	          <button class="btn btn-default" type="submit">Save!</button>
+	        </span>
+	      </form>
 	    </div><!-- /input-group -->
-	
-	  Keys and values
-	  stuff = ({{= @keys}})
+            <hr/>
+	    Keys and values:
+            <pre>
+<%= JSON.stringify(keys, null, 2) %>
+            </pre>
 	  </div><!-- /.col-lg-6 -->
 
   </div>
