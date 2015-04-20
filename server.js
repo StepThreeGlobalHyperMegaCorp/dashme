@@ -43,17 +43,27 @@ app.use(express.static(__dirname + "/bower_components"));
 
 app.get('/',
         function(req, res) {
-          if(req.query.key) { // There is a key to store, let's store it
+          if(req.query.name) { // There is a key to store, let's store it
             // Submit to the DB
             var docToInsert = {};
-            docToInsert[req.query.key] = req.query.value;
-            g_usersCollection.insert(docToInsert, function (err, doc) {
-              if (err) {
-                console.log(err);
-                // If it failed, return error
-                res.send("There was a problem adding the information to the database.");
-              }
-            });
+            docToInsert[req.query.name] = req.query.weight;
+			var name = req.query.name;
+			var weight = req.query.weight;
+			
+            //g_usersCollection.insert(docToInsert, 
+			g_usersCollection.findAndModify(
+				    {name:name},
+					{},
+				    {$currentDate: {"event.timestamp": { $type: "timestamp" }}, $set: {"event.weight": weight}},
+				    {upsert:true},
+					function (err, doc) {
+              			if (err) {
+                			console.log(err);
+                			// If it failed, return error
+                			res.send("There was a problem adding the information to the database.");
+              			}
+            		}
+			 );
           }
           // res.render('home', { foo: req.query.foo || "foo" });
           g_usersCollection.find().toArray(function(e, docs) {
