@@ -50,8 +50,27 @@ app.use(express.static(__dirname + "/gen"))
 app.use(express.static(__dirname + "/bower_components"))
 
 app.get('/',
-        function(req, res) {
-          res.render('home', { foo: req.query.foo || "foo" });
+        function(req, res) { 
+		  if(req.query.key) { // There is a key to store, let's store it
+			// Submit to the DB
+			g_usersCollection.insert({
+				"key" : req.query.value
+			}, function (err, doc) {
+				if (err) {
+					console.log(err);
+					// If it failed, return error
+					res.send("There was a problem adding the information to the database.");
+				}
+			});
+		  }
+		
+		  // res.render('home', { foo: req.query.foo || "foo" });
+		  g_usersCollection.find({},{},function(e,docs){
+		        res.render('home', {
+					foo: req.query.foo || "foo",
+		            "keys" : docs
+		        });
+		    });
         });
 
 // Start the server.

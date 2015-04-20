@@ -30,6 +30,23 @@
       <h1>DashMe</h1>
       <p>Get funky twice a week for good health. (code = {{= @foo }})</p>
     </div>
+
+	<div class="row">
+	  <div class="col-lg-6">
+	    <div class="input-group">
+		<form action="/"> 
+	      <input type="text" class="form-control" placeholder="Key" name='key'>
+		  <input type="text" class="form-control" placeholder="Value" name='value'>
+		  <span class="input-group-btn">
+	        <button class="btn btn-default" type="submit">Save!</button>
+	      </span>
+		</form>
+	    </div><!-- /input-group -->
+	
+	  Keys and values
+	  stuff = ({{= @keys}})
+	  </div><!-- /.col-lg-6 -->
+
   </div>
 
   <script src="jquery/dist/jquery.min.js"></script>
