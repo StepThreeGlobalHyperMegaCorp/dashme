@@ -47,28 +47,24 @@ app.get('/',
             // Submit to the DB
             var docToInsert = {};
             docToInsert[req.query.name] = req.query.weight;
-			var name = req.query.name;
-			var weight = req.query.weight;
-			var timestamp = new Date().getTime();
-			
-            //g_usersCollection.insert(docToInsert, 
-			g_usersCollection.findAndModify(
-				    {name:name},
-					{},
-				    // {$currentDate: {"event.timestamp": { $type: "timestamp" }}, $push: {"event.weight": [weight]}},
-				    // {$push: {"event":  [{ weight: weight, $currentDate: { date: { $type: "timestamp"}}}] }},
-				    {$push: {"event":  [{ weight: weight, timestamp: timestamp}] }},
-				    {upsert:true},
-					function (err, doc) {
-              			if (err) {
-                			console.log(err);
-                			// If it failed, return error
-                			res.send("There was a problem adding the information to the database.");
-              			}
-            		}
-			 );
+            var name = req.query.name;
+            var weight = req.query.weight;
+
+            g_usersCollection.findAndModify(
+              {name:name},
+              {},
+              { $push: {"event":  { weight: weight, timestamp: new Date() } } },
+              {upsert:true},
+              function (err, doc) {
+                if (err) {
+                  console.log(err);
+                  // If it failed, return error
+                  res.send("There was a problem adding the information to the database.");
+                }
+              }
+            );
           }
-          // res.render('home', { foo: req.query.foo || "foo" });
+
           g_usersCollection.find().toArray(function(e, docs) {
             console.log("Query result is ", docs);
             res.render('home',
