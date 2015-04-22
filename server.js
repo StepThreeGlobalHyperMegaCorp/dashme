@@ -49,12 +49,15 @@ app.get('/',
             docToInsert[req.query.name] = req.query.weight;
 			var name = req.query.name;
 			var weight = req.query.weight;
+			var timestamp = new Date().getTime();
 			
             //g_usersCollection.insert(docToInsert, 
 			g_usersCollection.findAndModify(
 				    {name:name},
 					{},
-				    {$currentDate: {"event.timestamp": { $type: "timestamp" }}, $set: {"event.weight": weight}},
+				    // {$currentDate: {"event.timestamp": { $type: "timestamp" }}, $push: {"event.weight": [weight]}},
+				    // {$push: {"event":  [{ weight: weight, $currentDate: { date: { $type: "timestamp"}}}] }},
+				    {$push: {"event":  [{ weight: weight, timestamp: timestamp}] }},
 				    {upsert:true},
 					function (err, doc) {
               			if (err) {
