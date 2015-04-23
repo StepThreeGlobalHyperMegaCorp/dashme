@@ -31,23 +31,24 @@
       <p>Get funky twice a week for good health.</p>
     </div>
 
-	<div class="row">
-	  <div class="col-lg-6">
-	    <div class="input-group">
-	      <form action="/">
-	        <input type="text" class="form-control" placeholder="Fat Bastard" name='name'>
-		<input type="text" class="form-control" placeholder="630" name='weight'>
-		<span class="input-group-btn">
-	          <button class="btn btn-default" type="submit">Save!</button>
-	        </span>
-	      </form>
-	    </div><!-- /input-group -->
-            <hr/>
-	    Keys and values:
-            <pre>
+    <div class="row">
+      <div class="col-lg-6">
+	<form action="/">
+          <div class="form-group">
+	    <input type="text" class="form-control" placeholder="Fat Bastard" name='name'>
+          </div>
+          <div class="form-group">
+	    <input type="text" class="form-control" placeholder="630" name='weight'>
+          </div>
+	  <button class="btn btn-primary btn-lg" type="submit">Save!</button>
+	</form>
+        <hr/>
+	Keys and values:
+        <pre>
 <%= JSON.stringify(keys, null, 2) %>
-            </pre>
-	  </div><!-- /.col-lg-6 -->
+        </pre>
+      </div><!-- /.col-lg-6 -->
+    </div>
 
   </div>
 
