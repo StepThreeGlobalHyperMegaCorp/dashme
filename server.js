@@ -75,7 +75,31 @@ app.get('/',
                          keys : docs
                        });
           });
-        });
+        }
+);
+
+// GPS handler
+// GET /gps?lat=40.756997&lon=-73.975494&speed=-1.000000&heading=-1.000000&vacc=10.000000&hacc=65.000000&altitude=22.638237&deviceid=FFFFFFFFE5471E09F12040C192DC0D25A56B8823
+app.get('/gps',
+    function(req, res) {
+		if(req.query.deviceid) { // iphone app has a deviceid
+			g_usersCollection.findAndModify(
+				{name:"Lucas"},
+				{},
+				{$push: {"event":  { lat: req.query.lat, long: req.query.lon, alt: req.query.altitude, timestamp: new Date() } }},
+				{upsert:true},
+				function (err, doc) {
+	                if (err) {
+	                  console.log(err);
+	                  // If it failed, return error
+	                  res.send("There was a problem adding the information to the database.");
+	                }
+	            }
+			);
+		}
+		res.redirect('/')
+	}	
+);
 
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
