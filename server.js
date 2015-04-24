@@ -7,7 +7,10 @@ var app = express();
 // Database and connection
 //---------------------------------------------------------------------------
 var g_mongoUri =
-  process.env.MONGO_URL || 'mongodb://localhost:27017/dashme';
+      process.env.MONGOLAB_URI ||
+      process.env.MONGOHQ_URL  ||
+      process.env.MONGO_URL    ||
+      'mongodb://localhost:27017/dashme';
 
 // The users collection will be placed here.
 var g_usersCollection = null;
