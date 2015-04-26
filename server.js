@@ -33,6 +33,29 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
   });
 });
 
+
+/*
+{
+  day: 'Wednesday',
+  spans: [ ['start', 'fin'],
+           ['start', 'fin']
+           ],
+  total: total,
+}
+
+QUERY for user=lucas
+{
+  type: 'atwork',
+  start: 'start',
+  end: 'end'
+}
+{
+  type: 'weight',
+  value: 160
+}
+*/
+
+
 //---------------------------------------------------------------------------
 // Routing and server config
 //---------------------------------------------------------------------------
