@@ -99,6 +99,9 @@ app.get('/gps/:user',
               else { res.send(200); }
             });
           }
+          else if (req.query.tracker) {
+            res.send(200);
+          }
           else {
             console.warn("Invalid URI: %s", req.url);
             res.send(400);
