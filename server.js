@@ -1,3 +1,4 @@
+var _ = require('lodash');
 var express = require('express');
 var EJS = require('ejs');
 var mongodb = require('mongodb');
@@ -84,30 +85,30 @@ app.get('/',
 );
 
 // GPS handler
-// GET /gps?lat=40.756997&lon=-73.975494&speed=-1.000000&heading=-1.000000&vacc=10.000000&hacc=65.000000&altitude=22.638237&deviceid=FFFFFFFFE5471E09F12040C192DC0D25A56B8823
 app.get('/gps/:user',
         function(req, res) {
-          if(req.query.deviceid) { // iphone app has a deviceid
-            g_locationCollection.insert({
-              user: req.param('user'),
-              lat: req.query.lat,
-              long: req.query.lon,
-              alt: req.query.altitude,
-              timestamp: new Date()
-            }, function (err, result) {
-              if (err) { console.warn("Error inserting: ", err); }
-              else { res.send(200); }
-            });
+          if (req.query.lat && req.query.lon) {
+            var doc = _.pick(req.query, ['lat', 'lon', 'alt']);
+            doc.timestamp = new Date();
+            g_locationCollection.insert(
+              doc,
+              function (err, result) {
+                if (err) { console.warn("Error inserting: ", err); }
+                else { res.send(200); }
+              });
           }
           else if (req.query.tracker) {
+            // The Android app sends ?tracker=start and ?tracker=stop requests
+            //  that need to succeed.
             res.send(200);
           }
           else {
-            console.warn("Invalid URI: %s", req.url);
+            console.warn("Invalid GPS params: %s", req.url);
             res.send(400);
           }
         });
 
+//------------------------------------------------------------------------------
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
