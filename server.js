@@ -85,10 +85,11 @@ app.get('/',
 
 // GPS handler
 // GET /gps?lat=40.756997&lon=-73.975494&speed=-1.000000&heading=-1.000000&vacc=10.000000&hacc=65.000000&altitude=22.638237&deviceid=FFFFFFFFE5471E09F12040C192DC0D25A56B8823
-app.get('/gps',
+app.get('/gps/:user',
         function(req, res) {
           if(req.query.deviceid) { // iphone app has a deviceid
             g_locationCollection.insert({
+              user: req.param('user'),
               lat: req.query.lat,
               long: req.query.lon,
               alt: req.query.altitude,
@@ -99,6 +100,7 @@ app.get('/gps',
             });
           }
           else {
+            console.warn("Invalid URI: %s", req.url);
             res.send(400);
           }
         });
