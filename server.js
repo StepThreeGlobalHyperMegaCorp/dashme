@@ -14,18 +14,23 @@ var g_mongoUri =
 
 // The users collection will be placed here.
 var g_usersCollection = null;
+var g_locationCollection = null;
 
 mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
-    if (err) { throw new Error(err); }
-    console.log("Connected to mongodb at %s!", g_mongoUri);
+  if (err) { throw new Error(err); }
+  console.log("Connected to mongodb at %s!", g_mongoUri);
 
-    // Now connect to the actual database collection (like a table)
-    db.collection("users", function(err, collection) {
-        if (err) { throw new Error(err); }
-        console.log("Obtained users collection.");
-        g_usersCollection = collection;
-      });
+  db.collection("users", function(err, collection) {
+    if (err) { throw new Error(err); }
+    console.log("Obtained users collection.");
+    g_usersCollection = collection;
   });
+  db.collection("location", function(err, collection) {
+    if (err) { throw new Error(err); }
+    console.log("Obtained location collection.");
+    g_locationCollection = collection;
+  });
+});
 
 //---------------------------------------------------------------------------
 // Routing and server config
@@ -81,25 +86,22 @@ app.get('/',
 // GPS handler
 // GET /gps?lat=40.756997&lon=-73.975494&speed=-1.000000&heading=-1.000000&vacc=10.000000&hacc=65.000000&altitude=22.638237&deviceid=FFFFFFFFE5471E09F12040C192DC0D25A56B8823
 app.get('/gps',
-    function(req, res) {
-		if(req.query.deviceid) { // iphone app has a deviceid
-			g_usersCollection.findAndModify(
-				{name:"Lucas"},
-				{},
-				{$push: {"event":  { lat: req.query.lat, long: req.query.lon, alt: req.query.altitude, timestamp: new Date() } }},
-				{upsert:true},
-				function (err, doc) {
-	                if (err) {
-	                  console.log(err);
-	                  // If it failed, return error
-	                  res.send("There was a problem adding the information to the database.");
-	                }
-	            }
-			);
-		}
-		res.redirect('/')
-	}	
-);
+        function(req, res) {
+          if(req.query.deviceid) { // iphone app has a deviceid
+            g_locationCollection.insert({
+              lat: req.query.lat,
+              long: req.query.lon,
+              alt: req.query.altitude,
+              timestamp: new Date()
+            }, function (err, result) {
+              if (err) { console.warn("Error inserting: ", err); }
+              else { res.send(200); }
+            });
+          }
+          else {
+            res.send(400);
+          }
+        });
 
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
