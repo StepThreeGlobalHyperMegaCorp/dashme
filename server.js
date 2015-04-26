@@ -3,6 +3,7 @@ var express = require('express');
 var EJS = require('ejs');
 var mongodb = require('mongodb');
 var app = express();
+var distance = require('gps-distance');
 
 //---------------------------------------------------------------------------
 // Database and connection
@@ -96,6 +97,11 @@ app.get('/gps/:user',
                 if (err) { console.warn("Error inserting: ", err); }
                 else { res.send(200); }
               });
+              
+              // Measure between two points: 
+              // "HOME" lat=40.72009604&lon=-73.98873348
+              var result = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
+              console.log("The distance is %s meters", result);
           }
           else if (req.query.tracker) {
             // The Android app sends ?tracker=start and ?tracker=stop requests
