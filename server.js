@@ -106,7 +106,7 @@ app.get('/',
                              { foo  : (req.query.foo || "foo"),
                                keys : docs
                              });
-                  }
+                }
               });
             }
           ]);
