@@ -81,33 +81,36 @@ var onNewLocation = function (req, res) {
       if (dist < 200) {
         console.log("Less than 200 Meters!");
 
-        // Get the event field of type location with max timestamp
-        g_eventsCollection.find({type:"location"}).sort({seenLast: -1}).limit(1).toArray(
-          function(err, docs) {
-            if (err) { console.warn("Error inserting: ", err); return; }
-            var last = docs[0];
-            console.log("Newest event ", last);
+        // Find records newer than 20 minutes
+        var now = new Date();
+        var threshold = new Date(now.getTime() - 20 * 60 * 1000);
 
-            // If timestamp is less than 10 minutes just update last
-            var ms = last.seenLast.getTime();// = doc.timestamp.getTime(); //> 1200000; // 20 minuts in miliseconds
-            console.log("Newest imestamp is %s ms", ms);
-
-            // Else add new record with start and end time being new timestamp.
-            g_eventsCollection.insert(
-              {
-                user: req.param('user'),
-                type: 'atwork',
-                seenFirst: last.timestamp,
-                seenLast: last.timestamp
-              },
-              function (err, result) {
-                if (err) { console.warn("Error inserting: ", err); return; }
-              });
-
-            res.send(200);
-          });
-      }
-    });
+        // Find the last modified location if it is less than the threshold, if not create it. 
+        g_eventsCollection.findOneAndUpdate({user: req.param('user'), type:"atwork", seenLast: {$gte: threshold}}, 
+                                            {$set: {seenLast: now}},
+                                            {
+                                              sort: {seenLast: -1}, 
+                                              upsert: true, 
+                                              returnOriginal: false},
+                                              function(err, doc) {
+                                                if (err) { console.warn("Error inserting: ", err); return; }
+                                                
+                                                doc = doc.value;
+                                                if(!doc.seenFirst){
+                                                  console.warn("No previous event found. ID: %j", doc)
+                                                  // We created a new record. We need to set the seenFirst field
+                                                  g_eventsCollection.findOneAndUpdate({_id: doc._id}, 
+                                                                                      {$set: {seenFirst: now}}, 
+                                                                                      {},
+                                                                                      function(err, doc){
+                                                                                        if (err) { console.warn("Error inserting: ", err); return; }});
+                                                }
+                                              }
+                                         );            
+          } // IF
+      } // Function
+    ); // INsert
+    res.send(200);
 };
 
 //---------------------------------------------------------------------------
