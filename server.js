@@ -68,9 +68,9 @@ app.set('view engine', 'ejs');
 
 // Log every request.
 app.use(function(req, res, next) {
-    console.log('%s %s', req.method, req.url);
-    next();
-  });
+  console.log('%s %s', req.method, req.url);
+  next();
+});
 
 // These directories get used for static files.
 app.use(express.static(__dirname + "/public"));
@@ -176,7 +176,7 @@ app.get('/gps/:user',
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
-    console.log("Listening on port %s...", g_port);
-    console.log("Ctrl+C to exit.");
-  });
+  console.log("Listening on port %s...", g_port);
+  console.log("Ctrl+C to exit.");
+});
 
