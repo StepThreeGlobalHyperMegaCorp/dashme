@@ -73,6 +73,7 @@ var onNewLocation = function (req, res) {
     doc,
     function (err, result) {
       if (err) { console.warn("Error inserting: ", err); return; }
+
       // Measure between two points:
       // "HOME" lat=40.72009604&lon=-73.98873348
       var dist = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
@@ -80,38 +81,46 @@ var onNewLocation = function (req, res) {
 
       if (dist < 200) {
         console.log("Less than 200 Meters!");
-
-        // Find records newer than 20 minutes
-        var now = new Date();
-        var threshold = new Date(now.getTime() - 20 * 60 * 1000);
-
-        // Find the last modified location if it is less than the threshold, if not create it. 
-        g_eventsCollection.findOneAndUpdate({user: req.param('user'), type:"atwork", seenLast: {$gte: threshold}}, 
-                                            {$set: {seenLast: now}},
-                                            {
-                                              sort: {seenLast: -1}, 
-                                              upsert: true, 
-                                              returnOriginal: false},
-                                              function(err, doc) {
-                                                if (err) { console.warn("Error inserting: ", err); return; }
-                                                
-                                                doc = doc.value;
-                                                if(!doc.seenFirst){
-                                                  console.warn("No previous event found. ID: %j", doc)
-                                                  // We created a new record. We need to set the seenFirst field
-                                                  g_eventsCollection.findOneAndUpdate({_id: doc._id}, 
-                                                                                      {$set: {seenFirst: now}}, 
-                                                                                      {},
-                                                                                      function(err, doc){
-                                                                                        if (err) { console.warn("Error inserting: ", err); return; }});
-                                                }
-                                              }
-                                         );            
-          } // IF
-      } // Function
-    ); // INsert
-    res.send(200);
+        updateOrCreateLocationEventRecord();
+      }
+    });
+  res.send(200);
 };
+
+var updateOrCreateLocationEventRecord = function () {
+  // Find records newer than 20 minutes
+  var now = new Date();
+  var threshold = new Date(now.getTime() - 20 * 60 * 1000 /* 20 minutes */);
+
+  // Find the last modified location if it is less than the threshold, if not create it.
+  g_eventsCollection.findOneAndUpdate(
+    {
+      user: req.param('user'),
+      type:"atwork",
+      seenLast: { $gte: threshold }
+    },
+    { $set: { seenLast: now } },
+    {
+      sort: {seenLast: -1},
+      upsert: true,
+      returnOriginal: false
+    },
+    function(err, doc) {
+      if (err) { console.warn("Error inserting: ", err); return; }
+      doc = doc.value;
+      if (!doc.seenFirst) {
+        console.warn("No previous event found");
+        // We created a new record. We need to set the seenFirst field
+        g_eventsCollection.findOneAndUpdate(
+          { _id: doc._id },
+          { $set: {seenFirst: now} },
+          {},
+          function(err, doc){
+            if (err) { console.warn("Error inserting: ", err); return; }
+          });
+      }
+    });
+}
 
 //---------------------------------------------------------------------------
 // Routing and server config
