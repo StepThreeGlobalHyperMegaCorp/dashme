@@ -25,7 +25,7 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
 
   db.collection("events", function(err, collection) {
     if (err) { throw new Error(err); }
-    console.log("Obtained users collection.");
+    console.log("Obtained events collection.");
     g_eventsCollection = collection;
   });
   db.collection("location", function(err, collection) {
@@ -117,18 +117,49 @@ app.get('/gps/:user',
         function(req, res) {
           if (req.query.lat && req.query.lon) {
             var doc = _.pick(req.query, ['lat', 'lon', 'alt']);
+            doc.user = req.param('user');
             doc.timestamp = new Date();
             g_locationCollection.insert(
               doc,
               function (err, result) {
                 if (err) { console.warn("Error inserting: ", err); }
-                else { res.send(200); }
+                else { 
+                  // Measure between two points:
+                  // "HOME" lat=40.72009604&lon=-73.98873348
+                  var result = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
+                  console.log("The distance is %s meters", result);
+
+                  if(result < 200){
+                    console.log("Less than 200 Meters!");
+
+                    // Get the event field of type location with max timestamp
+                    var last = g_eventsCollection.find({type:"location"}).sort({seenLast: -1}).limit(1);
+                    console.log("Newest event ", last);
+                    
+                    // If timestamp is less than 10 minutes just update last
+                    var ms = last.seenLast.getTime();// = doc.timestamp.getTime(); //> 1200000; // 20 minuts in miliseconds
+                    
+                    console.log("Newest imestamp is %s ms", ms)
+                    // Else add new record with start and end time being new timestamp. 
+
+                    g_eventsCollection.insert(
+                      {
+                        user: req.param('user'),
+                        type: 'location',
+                        lat: req.query.lat,
+                        lon: req.query.lon,
+                        alt: req.query.alt,
+                        seenFirst: doc.timestamp,
+                        seenLast: doc.timestamp
+                      }, 
+                      function (err, result) {
+                        if (err) { console.warn("Error inserting: ", err); }
+                      }
+                    );
+                  }
+                  res.send(200); }
               });
 
-              // Measure between two points:
-              // "HOME" lat=40.72009604&lon=-73.98873348
-              var result = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
-              console.log("The distance is %s meters", result);
           }
           else if (req.query.tracker) {
             // The Android app sends ?tracker=start and ?tracker=stop requests
