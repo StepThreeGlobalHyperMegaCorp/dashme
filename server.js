@@ -68,9 +68,9 @@ app.set('view engine', 'ejs');
 
 // Log every request.
 app.use(function(req, res, next) {
-    console.log('%s %s', req.method, req.url);
-    next();
-  });
+  console.log('%s %s', req.method, req.url);
+  next();
+});
 
 // These directories get used for static files.
 app.use(express.static(__dirname + "/public"));
@@ -125,10 +125,10 @@ app.get('/gps/:user',
                 else { res.send(200); }
               });
 
-              // Measure between two points:
-              // "HOME" lat=40.72009604&lon=-73.98873348
-              var result = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
-              console.log("The distance is %s meters", result);
+            // Measure between two points:
+            // "HOME" lat=40.72009604&lon=-73.98873348
+            var result = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
+            console.log("The distance is %s meters", result);
           }
           else if (req.query.tracker) {
             // The Android app sends ?tracker=start and ?tracker=stop requests
@@ -145,7 +145,7 @@ app.get('/gps/:user',
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
-    console.log("Listening on port %s...", g_port);
-    console.log("Ctrl+C to exit.");
-  });
+  console.log("Listening on port %s...", g_port);
+  console.log("Ctrl+C to exit.");
+});
 
