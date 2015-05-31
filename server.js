@@ -266,7 +266,7 @@ app.get('/setPlace/:user/:place',
 // Get user data
 app.get('/getData/:user/:type',
         function(req, res) {
-          g_eventsColletion.find({user:req.param("user"), type:req.param("type")}, {timestamp:1, value:1}).toArray(function(e, docs) {
+          g_eventsCollection.find({user:req.param("user"), type:req.param("type")}, {timestamp:1, value:1}).toArray(function(e, docs) {
             if (e) { console.warn(e); res.send(500); }
             else {
               console.log("Query result is ", docs);
