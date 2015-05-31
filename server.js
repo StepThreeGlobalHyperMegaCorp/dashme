@@ -5,6 +5,8 @@ var mongodb = require('mongodb');
 var app = express();
 var distance = require('gps-distance');
 var async = require('async');
+var passport = require("passport");
+var LocalStrategy = require('passport-local').Strategy;
 
 //---------------------------------------------------------------------------
 // Database and connection
@@ -188,6 +190,9 @@ app.use(function(req, res, next) {
   next();
 });
 
+app.use(passport.initialize());
+//app.use(passport.session());
+
 // These directories get used for static files.
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/gen"));
@@ -274,6 +279,36 @@ app.get('/getData/:user/:type',
             }
           });
         });
+
+//------------------------------------------------------------------------------
+// Authentication
+//------------------------------------------------------------------------------
+
+passport.serializeUser(function (user, done) {
+  done(null, user);
+});
+
+passport.serializeUser(function (id, done) {
+  done(null, id);
+});
+
+passport.use(new LocalStrategy(
+  function (username, password, done) {
+    console.log(username, password);
+    done(null, username);
+  }));
+
+app.get('/login',
+        function (req, res) {
+          res.render('login');
+        });
+
+app.get('/localauth',
+         passport.authenticate('local', { failureRedirect: '/login' }),
+         function(req, res) {
+           res.redirect('/');
+         }
+       );
 
 //------------------------------------------------------------------------------
 // Start the server.
