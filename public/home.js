@@ -83,4 +83,33 @@ var postCurrentLocation = function (click_event) {
 $( document ).ready(function () {
   $('#set-location-btn').click(setWorkLocation);
   $('#post-cur-location-btn').click(postCurrentLocation);
+
+  // Get context with jQuery - using jQuery's .get() method.
+  var ctx = $("#myChart").get(0).getContext("2d");
+  // This will get the first returned node in the jQuery collection.
+  var myNewChart = new Chart(ctx);
+
+  var data = {
+    labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    datasets: [
+      {
+        label: "Week 1",
+        fillColor: "rgba(220,220,220,0.5)",
+        strokeColor: "rgba(220,220,220,0.8)",
+        highlightFill: "rgba(220,220,220,0.75)",
+        highlightStroke: "rgba(220,220,220,1)",
+        data: [65, 59, 80, 81, 56, 55, 40]
+      },
+      {
+        label: "Week 2",
+        fillColor: "rgba(151,187,205,0.5)",
+        strokeColor: "rgba(151,187,205,0.8)",
+        highlightFill: "rgba(151,187,205,0.75)",
+        highlightStroke: "rgba(151,187,205,1)",
+        data: [28, 48, 40, 19, 86, 27, 90]
+      }
+    ]
+  };
+
+  var myBarChart = new Chart(ctx).Bar(data);
 });
