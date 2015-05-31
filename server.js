@@ -71,7 +71,6 @@ QUERY for user=lucas
 // User pref logic
 //------------------------------------------------------------------------------
 var setUserPreference = function (user, preference, value, cb) {
-  
   g_preferencesCollection.findOneAndUpdate(
     {
       user:user,
@@ -221,17 +220,19 @@ app.get('/gps/:user',
 app.get('/setPlace/:user/:place',
         function(req, res) {
           if (req.query.lat && req.query.lon) {
-          //onNewLocation(req, res);
-          setUserPreference(req.param('user'), req.param('place'), {lat:req.query.lat, lon:req.query.lon}, function(success) {
-            if(success){ res.send({ success:true }); }
-            else{ res.send(500); }
-          });
-        }
-        else {
-          console.warn("Invalid GPS params: %s", req.url);
-          res.send(400);
-        }
-      });
+            setUserPreference(req.param('user'),
+                              req.param('place'),
+                              { lat: req.query.lat, lon: req.query.lon },
+                              function(success) {
+                                if(success){ res.send({ success:true }); }
+                                else{ res.send(500); }
+                              });
+          }
+          else {
+            console.warn("Invalid GPS params: %s", req.url);
+            res.send(400);
+          }
+        });
 
 
 //------------------------------------------------------------------------------
