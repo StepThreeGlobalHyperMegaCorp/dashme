@@ -175,7 +175,8 @@ app.get('/',
                   {
                     user: req.query.name,
                     type: 'weight',
-                    value: req.query.weight
+                    value: req.query.weight,
+                    timestamp: new Date()
                   },
                   function (err, result) {
                     if (err) { console.warn(err); res.send(500); cb(err); }
@@ -233,6 +234,18 @@ app.get('/setPlace/:user/:place',
         }
       });
 
+
+// Get user data
+app.get('/getData/:user/:type',
+        function(req, res) {
+          g_eventsColletion.find({user:req.param("user"), type:req.param("type")}, {timestamp:1, value:1}).toArray(function(e, docs) {
+            if (e) { console.warn(e); res.send(500); }
+            else {
+              console.log("Query result is ", docs);
+              res.send(docs);
+            }
+          });
+});
 
 //------------------------------------------------------------------------------
 // Start the server.

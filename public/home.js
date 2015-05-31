@@ -61,6 +61,9 @@ $( document ).ready(function () {
     // This will get the first returned node in the jQuery collection.
     var myNewChart = new Chart(ctx);
     
+    // Find records newer than 7 days
+    var threshold = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000 /* 7 Days */);
+    
     var data = {
         labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
         datasets: [
