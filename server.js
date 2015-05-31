@@ -18,6 +18,7 @@ var g_mongoUri =
 // The users collection will be placed here.
 var g_eventsCollection = null;
 var g_locationCollection = null;
+var g_preferencesCollection = null;
 
 mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
   if (err) { throw new Error(err); }
@@ -75,6 +76,7 @@ var setUserPreference = function (user, preference, value, cb) {
   g_preferencesCollection.findOneAndUpdate(
     {
       user:user,
+      // TODO: rework the schema for preference types like location vs weight goal
       preference:preference
     },
     { $set: { value: value } },
@@ -92,28 +94,52 @@ var setUserPreference = function (user, preference, value, cb) {
 // Location logic.
 //------------------------------------------------------------------------------
 var onNewLocation = function (req, res) {
+  var username = req.param('user');
+
   var doc = _.pick(req.query, ['lat', 'lon', 'alt']);
-  doc.user = req.param('user');
+  doc.user = username;
   doc.timestamp = new Date();
+
   g_locationCollection.insert(
     doc,
     function (err, result) {
       if (err) { console.warn("Error inserting: ", err); return; }
 
-      // Measure between two points:
-      // "HOME" lat=40.72009604&lon=-73.98873348
-      var dist = distance(40.72009604, -73.98873348, req.query.lat, req.query.lon);
-      console.log("The distance is %s meters", dist);
+      // Find all the preferences for a given user
+      g_preferencesCollection.find({user: username}).toArray(
+        function (e, docs) {
+          if (e) { console.warn(e); res.send(500); return e; }
 
-      if (dist < 200) {
-        console.log("Less than 200 Meters!");
-        updateOrCreateLocationEventRecord();
-      }
+          // foreach preference, check the distance and update if necessary
+          return async.eachSeries(docs, function (doc, cb) {
+            var locationName = doc.preference;
+            var loc = doc.value;
+            var dist = distance(parseFloat(loc.lat), parseFloat(loc.lon),
+                                parseFloat(req.query.lat), parseFloat(req.query.lon));
+            console.log("The distance to %s is %s meters.", locationName, dist);
+            if (dist < 200) {
+              console.log("Less than 200 Meters from %s, so updating!", locationName);
+              updateOrCreateLocationEventRecord(username, locationName, cb);
+            }
+            else {
+              cb(null);
+            }
+          });
+        },
+        function (err) {
+          if (err) {
+            console.warn("error %s occurred during processing", err);
+          }
+          else {
+            console.log("successfully processed all locations");
+          }
+        });
     });
-  res.send(200);
+
+  res.send({ success: true }); // TODO: too eager / optimistic?
 };
 
-var updateOrCreateLocationEventRecord = function () {
+var updateOrCreateLocationEventRecord = function (username, location_name, cb) {
   // Find records newer than 20 minutes
   var now = new Date();
   var threshold = new Date(now.getTime() - 20 * 60 * 1000 /* 20 minutes */);
@@ -121,8 +147,8 @@ var updateOrCreateLocationEventRecord = function () {
   // Find the last modified location if it is less than the threshold, if not create it.
   g_eventsCollection.findOneAndUpdate(
     {
-      user: req.param('user'),
-      type:"atwork",
+      user: username,
+      type: location_name,
       seenLast: { $gte: threshold }
     },
     { $set: { seenLast: now } },
@@ -132,7 +158,7 @@ var updateOrCreateLocationEventRecord = function () {
       returnOriginal: false
     },
     function(err, doc) {
-      if (err) { console.warn("Error inserting: ", err); return; }
+      if (err) { console.warn("Error inserting: ", err); return cb(err); }
       doc = doc.value;
       if (!doc.seenFirst) {
         console.warn("No previous event found");
@@ -141,10 +167,12 @@ var updateOrCreateLocationEventRecord = function () {
           { _id: doc._id },
           { $set: {seenFirst: now} },
           {},
-          function(err, doc){
-            if (err) { console.warn("Error inserting: ", err); return; }
+          function(err, doc) {
+            if (err) { console.warn("Error inserting: ", err); return cb(err); }
+            return cb(null);
           });
       }
+      return null;
     });
 }
 
