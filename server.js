@@ -23,6 +23,11 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
   if (err) { throw new Error(err); }
   console.log("Connected to mongodb at %s!", g_mongoUri);
 
+  db.collection("preferences", function(err, collection) {
+    if (err) { throw new Error(err); }
+    console.log("Obtained preferences collection.");
+    g_preferencesCollection = collection;
+  });
   db.collection("events", function(err, collection) {
     if (err) { throw new Error(err); }
     console.log("Obtained events collection.");
@@ -61,6 +66,27 @@ QUERY for user=lucas
   value: 160
 }
 */
+
+//------------------------------------------------------------------------------
+// User pref logic
+//------------------------------------------------------------------------------
+var setUserPreference = function (user, preference, value, cb) {
+  
+  g_preferencesCollection.findOneAndUpdate(
+    {
+      user:user,
+      preference:preference
+    },
+    { $set: { value: value } },
+    {
+      upsert: true,
+      returnOriginal: false
+    },
+    function (err, result) {
+      if (err) { console.warn("Error inserting: ", err); return cb(false); }
+      return cb(true);
+    });
+};
 
 //------------------------------------------------------------------------------
 // Location logic.
@@ -190,6 +216,23 @@ app.get('/gps/:user',
             res.send(400);
           }
         });
+
+// Set Place Handler
+app.get('/setPlace/:user/:place',
+        function(req, res) {
+          if (req.query.lat && req.query.lon) {
+          //onNewLocation(req, res);
+          setUserPreference(req.param('user'), req.param('place'), {lat:req.query.lat, lon:req.query.lon}, function(success) {
+            if(success){ res.send({ success:true }); }
+            else{ res.send(500); }
+          });
+        }
+        else {
+          console.warn("Invalid GPS params: %s", req.url);
+          res.send(400);
+        }
+      });
+
 
 //------------------------------------------------------------------------------
 // Start the server.
