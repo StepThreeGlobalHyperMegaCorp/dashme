@@ -26,33 +26,61 @@ var getJson = function(url, opt_data, opt_cb, opt_fail_cb) {
 };
 
 //------------------------------------------------------------------------------
-// Misc Helpers
+// Core logic.
 //------------------------------------------------------------------------------
-var getUsername = function() {
-  return $('#username').val();
+var getUsername = function () {
+  var username = $('#username').val();
+  if (!username || username.length == 0) {
+    alert("fill in your username, please");
+    throw 1;
+  }
+  return username;
+};
+
+var setWorkLocation = function (click_event) {
+  var $sb = $('#set-location-btn');
+  $sb.button('loading');
+  console.log("Requesting location...");
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      console.log(pos);
+      getJson("/setPlace/" + getUsername() + "/work",
+              { lat: pos.coords.latitude,
+                lon: pos.coords.longitude },
+              function() {
+                $sb.button('reset');
+              },
+              function() {
+                alert("Failed.");
+                $sb.button('reset');
+              });
+    });
+};
+
+var postCurrentLocation = function (click_event) {
+  var $b = $('#post-cur-location-btn');
+  $b.button('loading');
+  console.log("Requesting location...");
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      console.log(pos);
+      getJson("/gps/" + getUsername(),
+              { lat: pos.coords.latitude,
+                lon: pos.coords.longitude },
+              function() {
+                $b.button('reset');
+              },
+              function() {
+                alert("Failed.");
+                $b.button('reset');
+              });
+    });
 };
 
 //------------------------------------------------------------------------------
-// main
+// On document ready.
 //------------------------------------------------------------------------------
 $( document ).ready(function () {
-  var $sb = $('#set-location-btn');
-  $sb.click(function (event) {
-    $sb.button('loading');
-    console.log("Requesting location...");
-    navigator.geolocation.getCurrentPosition(
-      function (pos) {
-        console.log(pos);
-        getJson("/setPlace/" + getUsername() + "/work",
-                { lat: pos.coords.latitude,
-                  lon: pos.coords.longitude },
-                function() {
-                  $sb.button('reset');
-                },
-                function() {
-                  alert("Failed.");
-                  $sb.button('reset');
-                });
-               });
-    });
+  $('#set-location-btn').click(setWorkLocation);
+  $('#post-cur-location-btn').click(postCurrentLocation);
 });
