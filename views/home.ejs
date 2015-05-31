@@ -23,7 +23,7 @@
     <![endif]-->
   </head>
 
-<body>
+  <body>
   &nbsp;
   <div class="container">
     <div class="jumbotron">
@@ -35,7 +35,8 @@
       <div class="col-lg-6">
 	<form action="/">
           <div class="form-group">
-	    <input type="text" class="form-control" placeholder="Fat Bastard" name='name'>
+	    <input id="username"
+                   type="text" class="form-control" placeholder="Fat Bastard" name='name'>
           </div>
           <div class="form-group">
 	    <input type="text" class="form-control" placeholder="630" name='weight'>
@@ -48,11 +49,17 @@
 <%= JSON.stringify(keys, null, 2) %>
         </pre>
       </div><!-- /.col-lg-6 -->
+      <div class="col-lg-6">
+        <button id="set-location-btn"
+                data-loading-text="Setting..."
+                class="btn btn-info">Set Current Location as "Work"</button>
+      </div>
     </div>
 
   </div>
 
   <script src="jquery/dist/jquery.min.js"></script>
   <script src="bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="home.js"></script>
 </body>
 </html>
