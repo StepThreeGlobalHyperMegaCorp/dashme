@@ -202,7 +202,7 @@ app.get('/',
                 g_eventsCollection.insert(
                   {
                     user: req.query.name,
-                    type: 'weight',
+                    type: 'weight', // TODO hardcoded weight here. 
                     value: req.query.weight,
                     timestamp: new Date()
                   },
