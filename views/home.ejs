@@ -36,7 +36,11 @@
 	<form action="/">
           <div class="form-group">
 	    <input id="username"
-                   type="text" class="form-control" placeholder="Fat Bastard" name='name'>
+                   type="text"
+                   class="form-control"
+                   placeholder="Fat Bastard"
+                   value="<%= username %>"
+                   name="name">
           </div>
           <div class="form-group">
 	    <input type="text" class="form-control" placeholder="630" name='weight'>
@@ -66,5 +70,8 @@
   <script src="bootstrap/dist/js/bootstrap.min.js"></script>
   <script src="Chart.js/Chart.js"></script>
   <script src="home.js"></script>
+  <script>
+    var g_username = "<%= username %>";
+  </script>
 </body>
 </html>

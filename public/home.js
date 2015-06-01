@@ -37,7 +37,7 @@ var setWorkLocation = function (click_event) {
   navigator.geolocation.getCurrentPosition(
     function (pos) {
       console.log(pos);
-      getJson("/setPlace/" + getUsername() + "/work",
+      getJson("/setPlace/work",
               { lat: pos.coords.latitude,
                 lon: pos.coords.longitude },
               function() {
@@ -57,7 +57,7 @@ var postCurrentLocation = function (click_event) {
   navigator.geolocation.getCurrentPosition(
     function (pos) {
       console.log(pos);
-      getJson("/gps/" + getUsername(),
+      getJson("/gps",
               { lat: pos.coords.latitude,
                 lon: pos.coords.longitude },
               function() {
@@ -82,10 +82,9 @@ $( document ).ready(function () {
   // This will get the first returned node in the jQuery collection.
   var myNewChart = new Chart(ctx);
 
-  getJson("/getData/" + "lucas/weight", {}, // TODO we hardcoded lucas here.
+  getJson("/getData/weight", {}, // TODO we hardcoded lucas here.
           function(weights){
             last7 = weights.slice(-7); // TODO we are getting last 7 events w/ no respect for date
-            
             var data = {
               labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
               datasets: [
@@ -101,5 +100,5 @@ $( document ).ready(function () {
             };
 
             var myBarChart = new Chart(ctx).Bar(data);
-  }); 
+  });
 });

@@ -1,5 +1,6 @@
 var _ = require('lodash');
 var express = require('express');
+var session = require('express-session');
 var EJS = require('ejs');
 var mongodb = require('mongodb');
 var app = express();
@@ -43,7 +44,6 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
   });
 });
 
-
 /*
 
 Schema Design:
@@ -74,7 +74,6 @@ QUERY for user=lucas
 // User pref logic
 //------------------------------------------------------------------------------
 var setUserPreference = function (user, preference, value, cb) {
-  
   g_preferencesCollection.findOneAndUpdate(
     {
       user:user,
@@ -96,7 +95,7 @@ var setUserPreference = function (user, preference, value, cb) {
 // Location logic.
 //------------------------------------------------------------------------------
 var onNewLocation = function (req, res) {
-  var username = req.param('user');
+  var username = req.user;
 
   var doc = _.pick(req.query, ['lat', 'lon', 'alt']);
   doc.user = username;
@@ -181,8 +180,13 @@ var updateOrCreateLocationEventRecord = function (username, location_name, cb) {
 //---------------------------------------------------------------------------
 // Routing and server config
 //---------------------------------------------------------------------------
-
 app.set('view engine', 'ejs');
+
+app.use(session({
+  secret: 'homerjsimpson',
+  saveUninitialized: false,
+  resave: true
+}));
 
 // Log every request.
 app.use(function(req, res, next) {
@@ -191,104 +195,21 @@ app.use(function(req, res, next) {
 });
 
 app.use(passport.initialize());
-//app.use(passport.session());
+app.use(passport.session());
 
 // These directories get used for static files.
 app.use(express.static(__dirname + "/public"));
 app.use(express.static(__dirname + "/gen"));
 app.use(express.static(__dirname + "/bower_components"));
 
-app.get('/',
-        function(req, res) {
-          async.series([
-            function (cb) {
-              if (req.query.name) { // There is a key to store, let's store it
-                // Submit to the DB
-                g_eventsCollection.insert(
-                  {
-                    user: req.query.name,
-                    type: 'weight', // TODO hardcoded weight here. 
-                    value: req.query.weight,
-                    timestamp: new Date()
-                  },
-                  function (err, result) {
-                    if (err) { console.warn(err); res.send(500); cb(err); }
-                    else { cb(null); }
-                  });
-              } else {
-                cb(null);
-              }
-            },
-            function (cb) {
-              g_eventsCollection.find().toArray(function(e, docs) {
-                if (e) { console.warn(e); res.send(500); cb(e); }
-                else {
-                  console.log("Query result is ", docs);
-                  res.render('home',
-                             { foo  : (req.query.foo || "foo"),
-                               keys : docs
-                             });
-                }
-              });
-            }
-          ]);
-        });
-
-// GPS handler
-app.get('/gps/:user',
-        function(req, res) {
-          if (req.query.lat && req.query.lon) {
-            onNewLocation(req, res);
-          }
-          else if (req.query.tracker) {
-            // The Android app sends ?tracker=start and ?tracker=stop requests
-            //  that need to succeed.
-            res.send(200);
-          }
-          else {
-            console.warn("Invalid GPS params: %s", req.url);
-            res.send(400);
-          }
-        });
-
-// Set Place Handler
-app.get('/setPlace/:user/:place',
-        function(req, res) {
-          if (req.query.lat && req.query.lon) {
-          //onNewLocation(req, res);
-          setUserPreference(req.param('user'), req.param('place'), {lat:req.query.lat, lon:req.query.lon}, function(success) {
-            if(success){ res.send({ success:true }); }
-            else{ res.send(500); }
-          });
-        }
-        else {
-          console.warn("Invalid GPS params: %s", req.url);
-          res.send(400);
-        }
-      });
-
-
-// Get user data
-app.get('/getData/:user/:type',
-        function(req, res) {
-          g_eventsCollection.find({user:req.param("user"), type:req.param("type")}, {timestamp:1, value:1}).toArray(function(e, docs) {
-            if (e) { console.warn(e); res.send(500); }
-            else {
-              console.log("Query result is ", docs);
-              res.send(docs);
-            }
-          });
-        });
-
 //------------------------------------------------------------------------------
 // Authentication
 //------------------------------------------------------------------------------
-
 passport.serializeUser(function (user, done) {
   done(null, user);
 });
 
-passport.serializeUser(function (id, done) {
+passport.deserializeUser(function (id, done) {
   done(null, id);
 });
 
@@ -310,6 +231,113 @@ app.get('/localauth',
          }
        );
 
+var ensureAuth = function (api) {
+  return function (req, res, next) {
+    if (req.isAuthenticated()) {
+      next();
+    }
+    else if (api) {
+      res.send(401);
+    }
+    else {
+      res.redirect("/login");
+    }
+  };
+};
+
+//------------------------------------------------------------------------------
+// Endpoints
+//------------------------------------------------------------------------------
+app.get('/',
+        ensureAuth(false),
+        function(req, res) {
+          async.series([
+            function (cb) {
+              if (req.query.name) { // There is a key to store, let's store it
+                // Submit to the DB
+                g_eventsCollection.insert(
+                  {
+                    user: req.query.name,
+                    type: 'weight', // TODO hardcoded weight here.
+                    value: req.query.weight,
+                    timestamp: new Date()
+                  },
+                  function (err, result) {
+                    if (err) { console.warn(err); res.send(500); cb(err); }
+                    else { cb(null); }
+                  });
+              } else {
+                cb(null);
+              }
+            },
+            function (cb) {
+              g_eventsCollection.find().toArray(function(e, docs) {
+                if (e) { console.warn(e); res.send(500); cb(e); }
+                else {
+                  console.log("Query result is ", docs);
+                  res.render('home',
+                             { username: req.user, keys: docs });
+                }
+              });
+            }
+          ]);
+        });
+
+
+// GPS handler
+app.get('/gps',
+        ensureAuth(true),
+        function(req, res) {
+          if (req.query.lat && req.query.lon) {
+            onNewLocation(req, res);
+          }
+          else if (req.query.tracker) {
+            // The Android app sends ?tracker=start and ?tracker=stop requests
+            //  that need to succeed.
+            res.send(200);
+          }
+          else {
+            console.warn("Invalid GPS params: %s", req.url);
+            res.send(400);
+          }
+        });
+
+
+// Set Place Handler
+app.get('/setPlace/:place',
+        ensureAuth(true),
+        function(req, res) {
+          if (req.query.lat && req.query.lon) {
+            setUserPreference(
+              req.user, req.param('place'),
+              {lat:req.query.lat, lon:req.query.lon}, function(success) {
+                if(success){ res.send({ success:true }); }
+                else{ res.send(500); }
+              });
+          }
+          else {
+            console.warn("Invalid GPS params: %s", req.url);
+            res.send(400);
+          }
+        });
+
+
+// Get user data
+app.get('/getData/:type',
+        ensureAuth(true),
+        function(req, res) {
+          g_eventsCollection.find(
+            { user: req.user, type:req.param("type") },
+            { timestamp: 1, value: 1 }
+          ).toArray(function(e, docs) {
+            if (e) { console.warn(e); res.send(500); }
+            else {
+              console.log("Query result is ", docs);
+              res.send(docs);
+            }
+          });
+        });
+
 //------------------------------------------------------------------------------
 // Start the server.
 var g_port = Number(process.env.PORT || 3000);
@@ -317,4 +345,3 @@ app.listen(g_port, function() {
   console.log("Listening on port %s...", g_port);
   console.log("Ctrl+C to exit.");
 });
-
