@@ -27,27 +27,43 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
   if (err) { throw new Error(err); }
   console.log("Connected to mongodb at %s!", g_mongoUri);
 
-  db.collection("preferences", function(err, collection) {
-    if (err) { throw new Error(err); }
-    console.log("Obtained preferences collection.");
-    g_preferencesCollection = collection;
-  });
-  db.collection("events", function(err, collection) {
-    if (err) { throw new Error(err); }
-    console.log("Obtained events collection.");
-    g_eventsCollection = collection;
-  });
-  db.collection("location", function(err, collection) {
-    if (err) { throw new Error(err); }
-    console.log("Obtained location collection.");
-    g_locationCollection = collection;
-  });
+  async.each([ { col: "preferences", cb: function(col) { g_preferencesCollection = col; } },
+               { col: "events",      cb: function(col) { g_eventsCollection = col; } },
+               { col: "location",    cb: function(col) { g_locationCollection = col; } }
+             ],
+             function (item, cb) {
+               db.collection(item.col, function(err, collection) {
+                 if (err) { return cb(err); }
+                 console.log("Obtained %s collection.", item.col);
+                 item.cb(collection);
+                 return cb(null);
+               });
+             },
+             function (err) {
+               if (err) {
+                 console.log("Couldn't connect to all collections.");
+                 process.exit(1);
+               }
+               else {
+                 console.log("Successfully connected to all collections.");
+               }
+             });
 });
 
 /*
 
 Schema Design:
 
+Preferences Collection
+{
+  user:  'lucas',
+  type:  'location',
+  key:   'work',
+  value: { lat: 40.12345, lon: -73.56789 }
+}
+
+
+Events Collection:
 {
   day: 'Wednesday',
   spans: [ ['start', 'fin'],
@@ -73,12 +89,12 @@ QUERY for user=lucas
 //------------------------------------------------------------------------------
 // User pref logic
 //------------------------------------------------------------------------------
-var setUserPreference = function (user, preference, value, cb) {
+var setUserPreference = function (user, type, key, value, cb) {
   g_preferencesCollection.findOneAndUpdate(
     {
-      user:user,
-      // TODO: rework the schema for preference types like location vs weight goal
-      preference:preference
+      user: user,
+      type: type,
+      key: key
     },
     { $set: { value: value } },
     {
@@ -107,13 +123,13 @@ var onNewLocation = function (req, res) {
       if (err) { console.warn("Error inserting: ", err); return; }
 
       // Find all the preferences for a given user
-      g_preferencesCollection.find({user: username}).toArray(
+      g_preferencesCollection.find({user: username, type: 'location'}).toArray(
         function (e, docs) {
           if (e) { console.warn(e); res.send(500); return e; }
 
           // foreach preference, check the distance and update if necessary
           return async.eachSeries(docs, function (doc, cb) {
-            var locationName = doc.preference;
+            var locationName = doc.key;
             var loc = doc.value;
             var dist = distance(parseFloat(loc.lat), parseFloat(loc.lon),
                                 parseFloat(req.query.lat), parseFloat(req.query.lon));
