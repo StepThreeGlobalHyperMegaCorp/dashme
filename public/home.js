@@ -82,11 +82,41 @@ $( document ).ready(function () {
   // This will get the first returned node in the jQuery collection.
   var myNewChart = new Chart(ctx);
 
-  getJson("/getData/weight", {}, // TODO we hardcoded lucas here.
-          function(weights){
-            last7 = weights.slice(-7); // TODO we are getting last 7 events w/ no respect for date
+  getJson("/getLocationData/work", {}, 
+          function(events){
+            // last7 = weights.slice(-7); // TODO we are getting last 7 events w/ no respect for date
+            
+            // For Each element in array add the minutes from SeenFirst to SeenLast to its start date
+            var dateHash = {};
+            for (var i = 0, l = events.length; i < l; i += 1) {
+              var key = new Date(events[i].seenFirst).toDateString();
+              if (!dateHash[key]) {dateHash[key] = 0;}
+              
+              dateHash[key] += new Date(events[i].seenLast) - new Date(events[i].seenFirst); // Store milliseconds checked in
+            }
+            
+            // Get Dates for last 7 days
+            var ts = new Date().getTime();
+            
+            var day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            var labels = [];
+            var data = [];
+            // last y days
+            for (var i = 0; i < 7; i += 1) {
+              var keyDate = new Date(ts - (6-i) * 24 * 60 * 60 * 1000); // Days in milliseconds
+              labels[i] = day[keyDate.getDay()]; 
+              if (dateHash[keyDate.toDateString()]) {
+                data[i] = dateHash[keyDate.toDateString()] / 60 * 60 * 1000; // convert to hours
+              } else {
+                data[i] = 0;
+              }
+            }
+            
+            // Convert dates to Days
+            
             var data = {
-              labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+              //labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+              labels: labels,
               datasets: [
               {
                 label: "Week 1",
@@ -94,7 +124,8 @@ $( document ).ready(function () {
                 strokeColor: "rgba(151,187,205,0.8)",
                 highlightFill: "rgba(151,187,205,0.75)",
                 highlightStroke: "rgba(151,187,205,1)",
-                data: $.map(last7, function(val){return val.value || 0;})
+                //data: $.map(last7, function(val){return val.value || 0;})
+                data: data
               }
               ]
             };
