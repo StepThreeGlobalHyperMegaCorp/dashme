@@ -343,6 +343,23 @@ app.get('/setPlace/:place',
         });
 
 
+// Get user's location data
+app.get('/getLocationData/:location',
+      ensureAuth(true),
+      function(req, res) {
+        g_eventsCollection.find(
+          { user: req.user, type:req.param("location") },
+          { seenFirst: 1, seenLast: 1 }
+        ).toArray(function(e, docs) {
+          if (e) { console.warn(e); res.send(500); }
+          else {
+            console.log("Query result is ", docs);
+            res.send(docs);
+          }
+        });
+      });
+
+
 // Get user data
 app.get('/getData/:type',
         ensureAuth(true),

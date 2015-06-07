@@ -96,17 +96,20 @@ $( document ).ready(function () {
             }
             
             // Get Dates for last 7 days
-            var ts = new Date().getTime();
+            var currentTime = new Date().getTime();
             
             var day = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
             var labels = [];
             var data = [];
-            // last y days
+            
+            // last 7 days
             for (var i = 0; i < 7; i += 1) {
-              var keyDate = new Date(ts - (6-i) * 24 * 60 * 60 * 1000); // Days in milliseconds
+              // Get date for i days ago
+              var keyDate = new Date(currentTime - (6-i) * 24 * 60 * 60 * 1000); // Days in milliseconds
+              
               labels[i] = day[keyDate.getDay()]; 
               if (dateHash[keyDate.toDateString()]) {
-                data[i] = dateHash[keyDate.toDateString()] / 60 * 60 * 1000; // convert to hours
+                data[i] = dateHash[keyDate.toDateString()] / (60 * 60 * 1000); // convert to hours
               } else {
                 data[i] = 0;
               }
