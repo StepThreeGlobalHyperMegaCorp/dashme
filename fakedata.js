@@ -118,7 +118,9 @@ var main = function() {
   var username = opt.options['user'] || die("Username argument empty.");
   var location = opt.options['location'] || die("Location argument empty.");
 
-  var spans = fakeAWeekOfWork(new Date());
+  // always start one week ago from now
+  var startDate = new Date(new Date().valueOf() - 7*24*60*60*1000);
+  var spans = fakeAWeekOfWork(startDate);
 
   if (opt.options['printonly']) {
     for (var i = 0; i < spans.length; ++i) {
