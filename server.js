@@ -2,52 +2,20 @@ var _ = require('lodash');
 var express = require('express');
 var session = require('express-session');
 var EJS = require('ejs');
-var mongodb = require('mongodb');
 var app = express();
 var distance = require('gps-distance');
 var async = require('async');
 var passport = require("passport");
 var LocalStrategy = require('passport-local').Strategy;
 
+var db = require("./mongo.js");
+
 //---------------------------------------------------------------------------
 // Database and connection
 //---------------------------------------------------------------------------
-var g_mongoUri =
-      process.env.MONGOLAB_URI ||
-      process.env.MONGOHQ_URL  ||
-      process.env.MONGO_URL    ||
-      'mongodb://localhost:27017/dashme';
 
-// The users collection will be placed here.
-var g_eventsCollection = null;
-var g_locationCollection = null;
-var g_preferencesCollection = null;
-
-mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
-  if (err) { throw new Error(err); }
-  console.log("Connected to mongodb at %s!", g_mongoUri);
-
-  async.each([ { col: "preferences", cb: function(col) { g_preferencesCollection = col; } },
-               { col: "events",      cb: function(col) { g_eventsCollection = col; } },
-               { col: "location",    cb: function(col) { g_locationCollection = col; } }
-             ],
-             function (item, cb) {
-               db.collection(item.col, function(err, collection) {
-                 if (err) { return cb(err); }
-                 console.log("Obtained %s collection.", item.col);
-                 item.cb(collection);
-                 return cb(null);
-               });
-             },
-             function (err) {
-               if (err) {
-                 console.log("Couldn't connect to all collections.");
-                 process.exit(1);
-               }
-               else {
-                 console.log("Successfully connected to all collections.");
-               }
-             });
+db.connect(function (the_db) {
+  console.log("db connected.");
 });
 
 /*
@@ -90,7 +58,7 @@ QUERY for user=lucas
 // User pref logic
 //------------------------------------------------------------------------------
 var setUserPreference = function (user, type, key, value, cb) {
-  g_preferencesCollection.findOneAndUpdate(
+  db.cols.preferences.findOneAndUpdate(
     {
       user: user,
       type: type,
@@ -108,7 +76,7 @@ var setUserPreference = function (user, type, key, value, cb) {
 };
 
 var getUserPrefs = function (user, type, cb) {
-  g_preferencesCollection.find({ user: user, type: type }).toArray(cb);
+  db.cols.preferences.find({ user: user, type: type }).toArray(cb);
 };
 
 //------------------------------------------------------------------------------
@@ -121,7 +89,7 @@ var onNewLocation = function (req, res) {
   doc.user = username;
   doc.timestamp = new Date();
 
-  g_locationCollection.insert(
+  db.cols.location.insert(
     doc,
     function (err, result) {
       if (err) { console.warn("Error inserting: ", err); return; }
@@ -167,7 +135,7 @@ var updateOrCreateLocationEventRecord = function (username, location_name, cb) {
   var threshold = new Date(now.getTime() - 20 * 60 * 1000 /* 20 minutes */);
 
   // Find the last modified location if it is less than the threshold, if not create it.
-  g_eventsCollection.findOneAndUpdate(
+  db.cols.events.findOneAndUpdate(
     {
       user: username,
       type: location_name,
@@ -185,7 +153,7 @@ var updateOrCreateLocationEventRecord = function (username, location_name, cb) {
       if (!doc.seenFirst) {
         console.warn("No previous event found");
         // We created a new record. We need to set the seenFirst field
-        g_eventsCollection.findOneAndUpdate(
+        db.cols.events.findOneAndUpdate(
           { _id: doc._id },
           { $set: {seenFirst: now} },
           {},
@@ -276,7 +244,7 @@ app.get('/',
             function (cb) {
               if (req.query.name) { // There is a key to store, let's store it
                 // Submit to the DB
-                g_eventsCollection.insert(
+                db.cols.events.insert(
                   {
                     user: req.query.name,
                     type: 'weight', // TODO hardcoded weight here.
@@ -292,7 +260,7 @@ app.get('/',
               }
             },
             function (cb) {
-              g_eventsCollection.find().toArray(function(e, docs) {
+              db.cols.events.find().toArray(function(e, docs) {
                 if (e) { console.warn(e); res.send(500); cb(e); }
                 else {
                   console.log("Query result is ", docs);
@@ -347,7 +315,7 @@ app.get('/setPlace/:place',
 app.get('/getLocationData/:location',
       ensureAuth(true),
       function(req, res) {
-        g_eventsCollection.find(
+        db.cols.events.find(
           { user: req.user, type:req.param("location") },
           { seenFirst: 1, seenLast: 1 }
         ).toArray(function(e, docs) {
@@ -364,7 +332,7 @@ app.get('/getLocationData/:location',
 app.get('/getData/:type',
         ensureAuth(true),
         function(req, res) {
-          g_eventsCollection.find(
+          db.cols.events.find(
             { user: req.user, type:req.param("type") },
             { timestamp: 1, value: 1 }
           ).toArray(function(e, docs) {

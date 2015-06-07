@@ -1,47 +1,5 @@
 var async = require('async');
-var mongodb = require('mongodb');
-
-//---------------------------------------------------------------------------
-// Database and connection
-//---------------------------------------------------------------------------
-var g_mongoUri =
-      process.env.MONGOLAB_URI ||
-      process.env.MONGOHQ_URL  ||
-      process.env.MONGO_URL    ||
-      'mongodb://localhost:27017/dashme';
-
-// The users collection will be placed here.
-var g_eventsCollection = null;
-var g_locationCollection = null;
-var g_preferencesCollection = null;
-
-mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
-  if (err) { throw new Error(err); }
-  console.log("Connected to mongodb at %s!", g_mongoUri);
-
-  async.each([ { col: "preferences", cb: function(col) { g_preferencesCollection = col; } },
-               { col: "events",      cb: function(col) { g_eventsCollection = col; } },
-               { col: "location",    cb: function(col) { g_locationCollection = col; } }
-             ],
-             function (item, cb) {
-               db.collection(item.col, function(err, collection) {
-                 if (err) { return cb(err); }
-                 console.log("Obtained %s collection.", item.col);
-                 item.cb(collection);
-                 return cb(null);
-               });
-             },
-             function (err) {
-               if (err) {
-                 console.log("Couldn't connect to all collections.");
-                 process.exit(1);
-               }
-               else {
-                 console.log("Successfully connected to all collections.");
-                 main();
-               }
-             });
-});
+var db = require('./mongo.js');
 
 //------------------------------------------------------------------------------
 // Fake Locations
@@ -165,3 +123,4 @@ var main = function() {
   }
 };
 
+db.connect(main);
