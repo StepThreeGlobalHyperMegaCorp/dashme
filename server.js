@@ -107,6 +107,10 @@ var setUserPreference = function (user, type, key, value, cb) {
     });
 };
 
+var getUserPrefs = function (user, type, cb) {
+  g_preferencesCollection.find({ user: user, type: type }).toArray(cb);
+};
+
 //------------------------------------------------------------------------------
 // Location logic.
 //------------------------------------------------------------------------------
@@ -123,12 +127,13 @@ var onNewLocation = function (req, res) {
       if (err) { console.warn("Error inserting: ", err); return; }
 
       // Find all the preferences for a given user
-      g_preferencesCollection.find({user: username, type: 'location'}).toArray(
-        function (e, docs) {
-          if (e) { console.warn(e); res.send(500); return e; }
+      getUserPrefs(username, 'location', function (err, docs) {
+        if (err) { console.warn(err); return res.send(500); }
 
-          // foreach preference, check the distance and update if necessary
-          return async.eachSeries(docs, function (doc, cb) {
+        // foreach preference, check the distance and update if necessary
+        return async.eachSeries(
+          docs,
+          function (doc, cb) {
             var locationName = doc.key;
             var loc = doc.value;
             var dist = distance(parseFloat(loc.lat), parseFloat(loc.lon),
@@ -141,16 +146,16 @@ var onNewLocation = function (req, res) {
             else {
               cb(null);
             }
+          },
+          function (err) {
+            if (err) {
+              console.warn("error %s occurred during processing", err);
+            }
+            else {
+              console.log("successfully processed all locations");
+            }
           });
-        },
-        function (err) {
-          if (err) {
-            console.warn("error %s occurred during processing", err);
-          }
-          else {
-            console.log("successfully processed all locations");
-          }
-        });
+      });
     });
 
   res.send({ success: true }); // TODO: too eager / optimistic?
