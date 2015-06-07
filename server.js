@@ -325,7 +325,7 @@ app.get('/setPlace/:place',
         function(req, res) {
           if (req.query.lat && req.query.lon) {
             setUserPreference(
-              req.user, req.param('place'),
+              req.user, 'location', req.param('place'),
               {lat:req.query.lat, lon:req.query.lon}, function(success) {
                 if(success){ res.send({ success:true }); }
                 else{ res.send(500); }
