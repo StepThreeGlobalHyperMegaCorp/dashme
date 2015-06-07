@@ -48,17 +48,17 @@ mongodb.MongoClient.connect(g_mongoUri, function (err, db) {
 //------------------------------------------------------------------------------
 var fakeSpan = function(date, startHour, endHour) {
   return {
-    seenFirst: new Date(date.valueOf() + startHour * 24*60*60*1000),
-    seenLast: new Date(date.valueOf() + endHour * 24*60*60*1000)
+    seenFirst: new Date(date.valueOf() + startHour * 60*60*1000),
+    seenLast: new Date(date.valueOf() + endHour * 60*60*1000)
   };
 };
 
 var fakeAWeekOfWork = function(startDate) {
   var sun = new Date(startDate.valueOf() -
                      (startDate.getDay() * 24*60*60*1000));
-  startDate.setHours(0);
-  startDate.setMinutes(0);
-  startDate.setSeconds(0);
+  sun.setHours(0);
+  sun.setMinutes(0);
+  sun.setSeconds(0);
 
   var map = [
     /* Sun */ [ ],
@@ -72,7 +72,7 @@ var fakeAWeekOfWork = function(startDate) {
 
   var insert_me = [];
   for (var i = 0; i < map.length; ++i) {
-    var start = Date(startDate.valueOf() + i*24*60*60*1000);
+    var start = new Date(sun.valueOf() + i*24*60*60*1000);
     var spans = map[i];
     for (var j = 0; j < spans.length; ++j) {
       var span = fakeSpan(start, spans[j][0], spans[j][1]);
@@ -110,25 +110,56 @@ var die = function(msg) {
 var main = function() {
   var opt = require("node-getopt").create([
     [ 'u', 'user=ARG', 'The username (e.g. lucas)' ],
-    [ 'l', 'location=ARG', 'The location name (e.g. work)' ]
+    [ 'l', 'location=ARG', 'The location name (e.g. work)' ],
+    [ 'p', 'printonly', 'Only print, no insert.' ],
+    [ 'r', 'remove', 'Remove all events, do not add.' ]
   ]).bindHelp().parseSystem();
 
-  console.log("Faking %s time spans for the current week for user %s.",
-              opt.options['location'] || die("Location argument empty"),
-              opt.options['user'] || die("Username argument empty"));
+  var username = opt.options['user'] || die("Username argument empty.");
+  var location = opt.options['location'] || die("Location argument empty.");
 
-  insertSpans(
-    opt.options['user'],
-    opt.options['location'],
-    fakeAWeekOfWork(new Date()),
-    function (err) {
-      if (err) {
-        console.log("Error! %s", err);
-      }
-      else {
-        console.log("Success!");
+  var spans = fakeAWeekOfWork(new Date());
+
+  if (opt.options['printonly']) {
+    for (var i = 0; i < spans.length; ++i) {
+      console.log("Fake span %s -> %s",
+                  spans[i].seenFirst.toISOString(),
+                  spans[i].seenLast.toISOString());
+    }
+    process.exit(0);
+  }
+  else if (opt.options['remove']) {
+    console.log("Removing all records with user %s and location %s...",
+                username, location);
+    g_eventsCollection.remove(
+      {
+        user: username,
+        type: location
+      },
+      {},
+      function (err, result) {
+        if (err) { console.log("Error %s", err); }
+        else { console.log("Success."); }
         process.exit(0);
-      }
-    });
+      });
+  }
+  else {
+    console.log("Faking %s time spans for the current week for user %s.",
+                username, location);
+
+    insertSpans(
+      username,
+      location,
+      spans,
+      function (err) {
+        if (err) {
+          console.log("Error! %s", err);
+        }
+        else {
+          console.log("Success!");
+          process.exit(0);
+        }
+      });
+  }
 };
 
