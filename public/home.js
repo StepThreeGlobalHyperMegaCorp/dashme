@@ -70,12 +70,38 @@ var postCurrentLocation = function (click_event) {
     });
 };
 
+var renderMap = function() {
+  var $map = $('#map-container');
+  var mapOptions = {
+    center: { lat: 40.7165032, lng: -73.9906838 },
+    zoom: 12
+  };
+  var map = new google.maps.Map($map.get(0), mapOptions);
+
+  getJson('/getAllLocations',
+          function (locations) {
+            console.log(locations);
+            $.each(locations, function (idx, o) {
+              console.log(o);
+              var marker = new google.maps.Marker({
+                map: map,
+                title: o.key,
+                position: { lat: o.value.lat * 1.0, lng: o.value.lon * 1.0 },
+                visible: true
+              });
+              console.log(marker.getPosition().toString());
+            });
+          });
+};
+
 //------------------------------------------------------------------------------
 // On document ready.
 //------------------------------------------------------------------------------
 $( document ).ready(function () {
   $('#set-location-btn').click(setWorkLocation);
   $('#post-cur-location-btn').click(postCurrentLocation);
+
+  renderMap();
 
   // Get context with jQuery - using jQuery's .get() method.
   var ctx = $("#myChart").get(0).getContext("2d");
