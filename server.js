@@ -10,6 +10,14 @@ var LocalStrategy = require('passport-local').Strategy;
 
 var db = require("./mongo.js");
 
+//
+// TODO:
+// ====
+//  - ability to add arbitrary places
+//  - tracking between two people
+//
+
+
 //---------------------------------------------------------------------------
 // Database and connection
 //---------------------------------------------------------------------------
