@@ -71,27 +71,33 @@ var postCurrentLocation = function (click_event) {
 };
 
 var renderMap = function() {
-  var $map = $('#map-container');
-  var mapOptions = {
-    center: { lat: 40.7165032, lng: -73.9906838 },
-    zoom: 12
-  };
-  var map = new google.maps.Map($map.get(0), mapOptions);
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      var lat = pos.coords.latitude;
+      var lon = pos.coords.longitude;
 
-  getJson('/getAllLocations',
-          function (locations) {
-            console.log(locations);
-            $.each(locations, function (idx, o) {
-              console.log(o);
-              var marker = new google.maps.Marker({
-                map: map,
-                title: o.key,
-                position: { lat: o.value.lat * 1.0, lng: o.value.lon * 1.0 },
-                visible: true
+      var $map = $('#map-container');
+      var mapOptions = {
+        center: { lat: lat, lng: lon },
+        zoom: 13
+      };
+      var map = new google.maps.Map($map.get(0), mapOptions);
+
+      getJson('/getAllLocations',
+              function (locations) {
+                console.log(locations);
+                $.each(locations, function (idx, o) {
+                  console.log(o);
+                  var marker = new google.maps.Marker({
+                    map: map,
+                    title: o.key,
+                    position: { lat: o.value.lat * 1.0, lng: o.value.lon * 1.0 },
+                    visible: true
+                  });
+                  console.log(marker.getPosition().toString());
+                });
               });
-              console.log(marker.getPosition().toString());
-            });
-          });
+    });
 };
 
 //------------------------------------------------------------------------------

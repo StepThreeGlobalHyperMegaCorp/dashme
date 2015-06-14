@@ -105,7 +105,7 @@ var onNewLocation = function (req, res) {
             var locationName = doc.key;
             var loc = doc.value;
             var dist = distance(parseFloat(loc.lat), parseFloat(loc.lon),
-                                parseFloat(req.query.lat), parseFloat(req.query.lon));
+                                parseFloat(req.query.lat), parseFloat(req.query.lon)) * 1000;
             console.log("The distance to %s is %s meters.", locationName, dist);
             if (dist < 200) {
               console.log("Less than 200 Meters from %s, so updating!", locationName);
