@@ -27,6 +27,7 @@ Preferences Collection
   user:  'lucas',
   type:  'location',
   key:   'work',
+  // MAYBE- tags:   ['New York', 'Productive', 'Virtuous']
   value: { lat: 40.12345, lon: -73.56789 }
 }
 
@@ -38,6 +39,15 @@ Events Collection:
            ['start', 'fin']
            ],
   total: total,
+}
+
+Location Collection:
+{
+  user:      'lucas',
+  timestamp: '2015-06-05T18:00:00.756Z',
+  lat:  '40.12345',
+  lon:  '73.56789',  
+  alt:  '0'
 }
 
 QUERY for user=lucas
