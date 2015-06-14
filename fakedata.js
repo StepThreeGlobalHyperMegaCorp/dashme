@@ -48,7 +48,7 @@ var insertSpans = function(username, location_name, spans, cb_final) {
     function(span, cb) {
       console.log("Inserting fake span %s -> %s",
                   span.seenFirst.toISOString(), span.seenLast.toISOString());
-      g_eventsCollection.insert(
+      db.cols.events.insert(
         {
           user: username,
           type: location_name,
@@ -91,7 +91,7 @@ var main = function() {
   else if (opt.options['remove']) {
     console.log("Removing all records with user %s and location %s...",
                 username, location);
-    g_eventsCollection.remove(
+    db.cols.events.remove(
       {
         user: username,
         type: location
