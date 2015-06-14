@@ -116,8 +116,9 @@ $( document ).ready(function () {
             }
             
             // Convert dates to Days
+            var steps = Math.ceil(Math.max.apply(Math, data));
             
-            var data = {
+            var chartData = {
               //labels: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
               labels: labels,
               datasets: [
@@ -133,6 +134,9 @@ $( document ).ready(function () {
               ]
             };
 
-            var myBarChart = new Chart(ctx).Bar(data);
+            var myBarChart = new Chart(ctx).Bar(chartData, {scaleOverride: true,
+                                                            scaleSteps: steps,
+                                                            scaleStepWidth: 1,
+                                                            scaleStartValue: 0});
   });
 });
