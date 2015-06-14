@@ -352,6 +352,19 @@ app.get('/getLocationData/:location',
       });
 
 
+app.get('/getAllLocations',
+        ensureAuth(true),
+        function (req, res) {
+          getUserPrefs(req.user, 'location', function (err, data) {
+            if (err) {
+              console.log("Error getting user prefs: ", err);
+              return res.send(500);
+            }
+            return res.send(data);
+          });
+        });
+
+
 // Get user data
 app.get('/getData/:type',
         ensureAuth(true),
@@ -373,7 +386,7 @@ app.get('/getData/:type',
 
 opt = require('node-getopt').create([
   [ 'a', 'auto-user=ARG', 'auto user' ]
-]).bindHelp().parseSystem()
+]).bindHelp().parseSystem();
 
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
