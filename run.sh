@@ -4,8 +4,10 @@ mkdir -p mongo_files
 echo \$ mongod
 pgrep mongod || (./mongo/bin/mongod --dbpath ./mongo_files --quiet -httpinterface --rest &)
 
-args=$( getopt rl $* )
+args=$( getopt rlu: $* )
 set -- $args
+
+server_flags=
 
 for i; do
     case "$i" in
@@ -15,11 +17,14 @@ for i; do
         -l)
             ./mongo/bin/mongo dashme
             exit 1;;
+        -u)
+            server_flags="${server_flags} -a $2"
+            shift; shift;;
     esac
 done
 
 echo \$ npm install
 npm install
 
-echo \$ nodemon -V -w server.js $@
-node node_modules/nodemon/bin/nodemon.js -V server.js $@
+echo \$ nodemon -V -w server.js ${server_flags} $@
+node node_modules/nodemon/bin/nodemon.js -V server.js ${server_flags} $@

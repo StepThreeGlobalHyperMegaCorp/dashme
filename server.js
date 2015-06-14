@@ -225,6 +225,30 @@ var ensureAuth = function (api) {
     if (req.isAuthenticated()) {
       next();
     }
+    // For prototype purposes: auto authenticate any request that also has a
+    // 'user' param.
+    else if (req.query.user) {
+      console.log("Forcing login from user param: ", req.query.user);
+      req.logIn(req.query.user, function (err) {
+        if (err) {
+          console.log(err);
+          return res.send(500);
+        }
+        return next();
+      });
+    }
+    // For development purposes: auto authenticate any request when there is a
+    //  --auto-user command line option specified.
+    else if (opt.options['auto-user']) {
+      console.log("Auto-authenticating user ", opt.options['auto-user']);
+      req.logIn(opt.options['auto-user'], function (err) {
+        if (err) {
+          console.log(err);
+          return res.send(500);
+        }
+        return next();
+      });
+    }
     else if (api) {
       res.send(401);
     }
@@ -346,6 +370,11 @@ app.get('/getData/:type',
 
 //------------------------------------------------------------------------------
 // Start the server.
+
+opt = require('node-getopt').create([
+  [ 'a', 'auto-user=ARG', 'auto user' ]
+]).bindHelp().parseSystem()
+
 var g_port = Number(process.env.PORT || 3000);
 app.listen(g_port, function() {
   console.log("Listening on port %s...", g_port);
